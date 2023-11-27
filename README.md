@@ -40,3 +40,4 @@ In the `Project_Excerpts` directory, you'll find select pieces of my work, inclu
 - `README.adoc`: A comprehensive guide for model curators on utilizing the genetic algorithm.
 - Sample configuration files: Templates for genetic algorithm and computing system settings.
 - `deap_ga.py`: The core script outlining the genetic algorithm framework.
+- `cfg-1.sh`, `cfg-my-experiment.sh`, and `hyperparams.json`: File outlines for running the genetic algorithm and defining the hyperparameter space which model curators can adapt.
