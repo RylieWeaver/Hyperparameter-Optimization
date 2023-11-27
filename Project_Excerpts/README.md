@@ -1,96 +1,213 @@
+= Running With the Supervisor Tool
 
-# GA (genetic algorithm) based based hyperparameter optimization on CANDLE Benchmarks
+The following is a guide to running your Genetic Algorithm Hyperparameter Optimization workflow.
 
-The GA workflow uses the Python deap package (http://deap.readthedocs.io/en/master) to optimize hyperparameters using a genetic algorithm.
+The user is encouraged to clone the home directory of this README file, change the model being sourced and the hyperparameter space, then run the HPO workflow with their model.
 
-## The supervisor interface
+== Setup
 
-Command line:
-```
-$ supervisor SITE WORKFLOW TEST_SCRIPT
-```
+First, setup by executing the following commands:
 
-Variables that can be set in the TEST_SCRIPT
+- Add the supervisor tool to your path
++
+ * If on lambda: 'PATH=/software/improve/Supervisor/bin for lambda'
+ * If on polaris: 'PATH=/lus/grand/projects/CSC249ADOA01/Supervisor/bin:$PATH'
+ * If on a system where Supervisor installed: clone Supervisor with 'git clone https://github.com/ECP-CANDLE/Supervisor.git' and then add to PATH with 'export PATH=~/path/to/Supervisor/bin:$PATH' 
++
+- Make CANDLE_DATA_DIR (this is the directory to read/write data and output):
++
+ * If on lambda: `mkdir -p /tmp/<user>/data_dir`
+ * If on polaris: `mkdir -p /home/<user>/data_dir`
+ * If on other computing systems: `mkdir -p </somewhere_you_can_read_and_write_files>`
++
+- (If not done by the singularity container) Download the Data
++
+ * Download into the directory /CANDLE_DATA_DIR/<model name>/Data, making the directory if necessary
+ * Most models' data can be found link:https://ftp.mcs.anl.gov/pub/candle/public/improve/[here]
+ * The data will likely need to be unzipped and moved to be in the right directory
++
 
-MODEL_NAME
-PARAM_SET_FILE
-SEED
-EXPID
-NUM_ITERATIONS
-POPULATION_SIZE
-GA_STRATEGY
-OFFSPRING_PROP
-MUT_PROB
-CX_PROB
-MUT_INDPB
-CX_INDPB
-TOURNSIZE
 
-PROCS
-PPN
-WALLTIME
-PROJECT
-QUEUE
-BENCHMARK_TIMEOUT
+== Example Command
 
-## Making Changes <a name="making_changes"></a>
+[source, bash]
+----
+supervisor lambda GA cfg-1.sh
+----
 
-To create your own SITE files in workflows/common/sh/:
+This command will use the 'supervisor' tool to run the Genetic Algorithm ('GA') workflow using the 'cfg-1.sh' file on the 'lambda' computing system. In the case of using a different computing system, that computing system should replace lambda in the command.
 
-- langs-SITE.sh
-- langs-app-SITE.sh
-- modules-SITE.sh
-- sched-SITE.sh config
+This command must be run inside the 'deap-generic' directory, or whatever copy you made of it
 
-copy existing ones but modify the langs-SITE.sh file to define the EQPy location (see workflows/common/sh/langs-local-as.sh for an example).
+== The cfg-1.sh file
 
-### Structure <a name="structure"></a>###
+The default file looks like:
 
-The relevant parameters for the GA algorithm are defined in `cfg-prm-*.sh` scripts (see example in `cfg-prm-1.sh`). These are:
+[source, bash]
+----
+source_cfg -v cfg-my-settings.sh
 
-- SEED: The random seed used by deap in the GA.
-- NUM_ITERATIONS: The number of iterations the GA should perform.
-- POPULATION_SIZE: The maximum number of hyperparameter sets to evaluate in each iteration.
-- GA_STRATEGY: The algorithm used by the GA. Can be one of "simple" or "mu_plus_lambda".
-- OFFSPRING_PROP: The offspring population size as a proportion of the population size (this is rounded) (specifically for the mu_plus_lambda strategy)
-- MUT_PROB: Probability an individual is mutated.
-- CX_PROB: Probability that mating happens in a selected pair.
-- MUT_INDPB: Probability for each gene to be mutated in a mutated individual.
-- CX_INDPB: Probability for each gene to be swapped in a selected pair.
-- TOURNSIZE: Size of tournaments in selection process.
+export CANDLE_MODEL_TYPE="SINGULARITY"
+# export MODEL_NAME=/software/improve/images/<model>.sif  #Lambda
+# export MODEL_NAME=/lus/grand/projects/CSC249ADOA01/images/<model>.sif  #Polaris
+export PARAM_SET_FILE=hyperparams.json
+----
 
-### Genetic Algorithm
+File explanation:
+- `source_cfg -v cfg-my-settings.sh`. This line says that the workflow should source the 'cfg-my-settings.sh' file for workflow parameters.
+- `export CANDLE_MODEL_TYPE="SINGULARITY"`. This line says to use singularity containers for the workflow.
+- `export MODEL_NAME=`. This line gives the path to the sif file for the model used for your computation system
+- `export PARAM_SET_FILE=hyperparams.json`. This line says to use the 'general_params.json' file for the model's hyperparameter space.
+
+For example, `export MODEL_NAME=
+
+== The cfg-my-settings.sh file
+
+The default file looks like:
+
+[source, bash]
+----
+echo SETTINGS
+
+# General Settings
+export PROCS=3
+export PPN=3
+export WALLTIME=01:00:00
+export NUM_ITERATIONS=1
+export POPULATION_SIZE=2
+
+# GA Settings
+export GA_STRATEGY='mu_plus_lambda'
+export OFFSPRING_PROPORTION=0.5
+export MUT_PROB=0.8
+export CX_PROB=0.2
+export MUT_INDPB=0.5
+export CX_INDPB=0.5
+export TOURNSIZE=4
+
+# Lambda Settings
+# export CANDLE_DATA_DIR=/tmp/data
+# export CANDLE_CUDA_OFFSET=2
+
+# Polaris Settings
+# export CANDLE_DATA_DIR=/home/weaverr/output
+# export QUEUE="debug"
+----
+
+Using `export` sets parameters for the workflow.
+
+Settings Explanation:
+
+- `PROCS` sets the number of processes to run at a time. Two processes are used for the workflow, while the others are dedicated to running the models, so `PROCS=3` runs 1 model at a time for example. It's recommended to set PROCS=(POPULATION_SIZE/2)+2 with default GA settings.
+- `PPN` sets the number of processes per node(GPU). This, along with PROCS, set the number of GPUs being used at a time. Note that PPN must fit the abilities of the GPUs on your computation system. It's recommended to set PPN as high as PROCS or what the computation system will allow.
+- `WALLTIME` sets the maximum time that the model can be left running on the computation system.
+- `NUM_ITERATIONS` sets the number of generations in the genetic algorithm. Note that this is one more than the number of evolutions... if `NUM_ITERATINS=1`, then the starting population is evaluated, but no evolutions happen.
+- `POPULATION_SIZE` is as labelled.
+- `STRATEGY, OFF_PROP, MUT_PROB, CX_PROB, MUT_INDPB, CX_INDPB, TOURNAMENT_SIZE` are all parameters for the genetic algorithm used for hyperparameter optimization. Default parameters are sufficient and robust, but see below section for more detail.
+- `CANDLE_DATA_DIR` sets where to read/write your data/results. On lambda, this could be set to /tmp/data, whereas on polaris, it could be set to /home/weaverr/output. Other systems would be set to whatever path you gave to the 'mkdir -p </somewhere_you_can_read_and_write_files>' command.
+- `CANDLE_CUDA_OFFSET` sets the starting point of 'CUDA_VISIBLE_DEVICES'. With the default value of 1, the workflow will use GPU #1, then GPU #2 if needed, and so on. This is used on lambda because the 0th GPU does not have the required space for the cancer data.
+- `QUEUE` sets the type of job you're submitting to Polaris. Make sure to align `PROCS`, `PPN`, and `WALLTIME` with the queue you submit to Polaris. You can find information on Polaris job submitting link:https://docs.alcf.anl.gov/polaris/running-jobs/[here].
+
+Other computation sytems may have other parameters that you need to export.
+
+== The hyperparams.json file
+
+The default file looks like:
+
+[source, json]
+----
+[
+
+  {
+    "name": "activation",
+    "type": "categorical",
+    "element_type": "string",
+    "values": [
+      "softmax",
+      "elu",
+      "softplus",
+      "softsign",
+      "relu",
+      "tanh",
+      "sigmoid",
+      "hard_sigmoid",
+      "linear"
+    ]
+  },
+
+  {
+    "name": "learning_rate",
+    "type": "float",
+    "lower": 0.000001,
+    "upper": 0.2,
+    "sigma": 0.05
+  },
+
+  {
+    "name": "batch_size",
+    "type": "ordered",
+    "element_type": "int",
+    "values": [32, 64, 128],
+    "sigma": 1
+  },
+
+  {
+    "name": "epochs",
+    "type": "constant",
+    "value": 5
+  }
+
+]
+----
+
+This file is made to be applicable to the large majority of models by using common hyperparameters to vary. The user is encouraged to adapt this file depending on the model and their desired hyperparameters of study.
+
+
+== Debugging
+
+Navigate to /CANDLE_DATA_DIR/<model>/Output/ to find the hyperparameter experiments with your model. Inside of these, the runs are listed, each with their own 'model.log', which will contain the error if there is one.
+
+
+== Genetic Algorithm
 
 The Genetic Algorithm is made to model evolution and natural selection by applying crossover (mating), mutation, and selection to a population in many iterations
 (generations).
 
-In the "simple" strategy, offspring are created with crossover AND mutation, and the selection for the next population happens from ONLY the offspring. In
-the "mu_plus_lambda" strategy, offspring are created with crossover OR mutation, and the selection for the next population happens from BOTH the offpsring
+Strategy
+
+- In the "simple" strategy, offspring are created with crossover AND mutation, and the selection for the next population happens from ONLY the offspring. In
+the "mu_plus_lambda" strategy, offspring are created with crossover OR mutation, and the selection for the next population happens from BOTH the offspring
 and parent generation. Also in the mu_plus_lambda strategy, the number of offspring in each generation is a chosen parameter, which can be controlled by the
 user through offspring_prop.
 
-Mutation intakes two parameters: mut_prob and mut_indpb. The parameter mut_prob represents the probability that an individual will be mutated. Then, once an
+Mutation
+
+- Mutation intakes two parameters: mut_prob and mut_indpb. The parameter mut_prob represents the probability that an individual will be mutated. Then, once an
 individual is selected as mutated, mut_indpb is the probability that each gene is mutated. For example, if an individual is represented by the array
-[11.4, 7.6, 8.1] where mut_prob=1 and mut_indpb=0.5, there's a 50 percent chance that 11.4 will be mutated, a 50 percent chance that 7.6 will be mutated,
+`[11.4, 7.6, 8.1]` where mut_prob=1 and mut_indpb=0.5, there's a 50 percent chance that 11.4 will be mutated, a 50 percent chance that 7.6 will be mutated,
 and a 50 percent chance that 8.1 will be mutated. Also, if either of mut_prob or mut_indpb equal 0, no mutations will happen. The type of mutation we apply
 depends on the data type because we want to preserve data type under mutation and 'closeness' may or may not represent similarity. For example, gaussian
 mutation is rounded for integers to preserve their data type, and mutation is a random draw for categorical variables because being close in a list doesn't
 equate to similarity.
 
-Crossover intake two parameters: cx_prob and cx_indpb, which operate much in the same way as cx_prob and cx_indpb. For example, given two individuals
-represented by the arrays [1, 2, 3] and [4, 5, 6] where cx_prob=1 and cx_indpb=0.5, there's a 50% chance that 1 and 4 will be 'crossed', a 50% chance that
+Crossover
+
+- Crossover intake two parameters: cx_prob and cx_indpb, which operate much in the same way as cx_prob and cx_indpb. For example, given two individuals
+represented by the arrays `[1, 2, 3]` and `[4, 5, 6]` where cx_prob=1 and cx_indpb=0.5, there's a 50% chance that 1 and 4 will be 'crossed', a 50% chance that
 2 and 5 will be 'crossed', and a 50% chance that 3 and 6 will be 'crossed'. Also, if either mut_prov or mut_indpb equal 0, no crossover will happen. The definition
-of 'crossed' depends on the crossover function, which must be chosen carefully to protect data types. We use cx_Uniform, which swaps values such that [4, 2, 3],
-[1, 5, 6] is a possible result from crossing the previously defined individuals. One example of a crossover function which doesn't preserve data types would be
+of 'crossed' depends on the crossover function, which must be chosen carefully to protect data types. We use cx_Uniform, which swaps values such that `[4, 2, 3]`,
+`[1, 5, 6]` is a possible result from crossing the previously defined individuals. One example of a crossover function which doesn't preserve data types would be
 cx_Blend, which averages values.
 
-Selection has various customizations, with tournaments being our implementation. In tournament selection, 'tournsize' individuals are chosen, and the individual
+Selection
+
+- Selection has various customizations, with tournaments being our implementation. In tournament selection, 'tournsize' individuals are chosen, and the individual
 with the best fitness score is selected. This repeats until the desired number of individuals are selected. Note that choosing individuals is done with replacement,
 which introduces some randomness to who is selected. Although unlikely, it's possible for one individual to be the entire next population. It's also possible for
 the best individual to not be selected as long as tournsize is smaller than the population. However, it is guaranteed that the worst 'tournsize-1' individuals are
 not selected for the next generation. Tournsize can be thought of as the selection pressure on the population.
 
-Notes:
+=== Notes on GA
 - In the mu_plus_lambda strategy, cx_prob+mut_prob must be less than or equal to 1. This stems from how mutation OR crossover is applied in mu_plus_lambda, as
   opposed to mutation AND crossover in the simple strategy.
 - GPUs can often sit waiting in most implementations of the Genetic Algorithm because the number of evaluations in each generation is usually variable. However,
@@ -100,139 +217,7 @@ Notes:
   of cx_indpb and mut_indpb, an individual may be evaluated with actually having different hyperparameters. This also means that by adjusting mut_indpb and cx_indpb,
   the level of mutation and crossover can be kept low despite cx_prob+mut_prob being high (if desired). Note that the number of evaluations per generation can be
   kept constant in the simple strategy as well, but the number of evals has to be the population size.
-- Genetic Algorithms usually have mutation and crossover probabilites around 0.1. However, they also usually have population~500 and generations~100, which gives a lot
-  of opportunity for mutation and crossover to happen. In the case of smaller populations and/or generations, it may be advantageous to increase mutation and crossover
-  probabilites to larger than ordinary. In this case, the mu_plus_lambda strategy may be advantageous because of it's ability to select a parent for the next generation.
-  Also, when there's a smaller number of generations (i.e. less number of times selection pressure is applied), it may be advantageous to increase tournament size (i.e.
-  increase selection pressure strength) to compensate.
-- The default values are: NUM_ITERATIONS=5  |  POPULATION_SIZE=16  |  GA_STRATEGY=mu_plus_lambda  |  OFFSPRING_PROP=0.5  |  MUT_PROB=0.8  |  CX_PROB=0.2  |
-                          MUT_INDPB=0.5  |  CX_INDPB=0.5  |  TOURNSIZE=4
+- Genetic Algorithms usually have mutation and crossover independent probabilities around 0.1. However, they also usually have population~500 and generations~100, which gives a lot of opportunity for mutation and crossover to happen. In the case of smaller populations and/or generations, it may be advantageous to increase mutation and crossover probabilities to larger than ordinary. Moreover, a "mutated" or "crossed" individual is evaluated regardless if any individual genes are mutated or crossed, so it may be advantageous to take advantage of the evaluation and make sure that the individual has changed by setting mutation and crossover independent probabilities relatively high. In this case, the mu_plus_lambda strategy may be advantageous because of it's ability to select a parent for the next generation (we don't want to lose high-performing individuals to mutation/crossover). Also, when there's a smaller number of generations (i.e. less number of times selection pressure is applied), it may be advantageous to increase tournament size (i.e. increase selection pressure strength) to compensate.
+- The default values are: NUM_ITERATIONS=5  |  POPULATION_SIZE=16  |  GA_STRATEGY=mu_plus_lambda  |  OFFSPRING_PROP=0.5  |  MUT_PROB=0.8  |  CX_PROB=0.2  | MUT_INDPB=0.5  |  CX_INDPB=0.5  |  TOURNSIZE=4
 
 See https://deap.readthedocs.io/en/master/api/algo.html?highlight=eaSimple#module-deap.algorithms for more information.
-
-### Hyperparameter Configuration File <a name="config"></a>###
-
-The GA workflow uses a json format file for defining the hyperparameter space. The GA workflow comes with 4 sample hyperparameter spaces in the `GA/data` directory, one each for the combo, nt3, p1b1 and tc1 benchmarkts.
-
-The hyperparameter configuration file has a json format consisting of a
-list of json dictionaries, each one of which defines a hyperparameter. Each dictionary has the following required keys:
-
-- name: the name of the hyperparameter (e.g. _epochs_)
-- type: determines how the initial population (i.e. the hyperparameter sets) are initialized from the named parameter and how those values are subsequently mutated by the GA. Type is one of `constant`, `int`, `float`, `logical`, `categorical`, or `ordered`.
-  - `constant`:
-    - each model is initialized with the same specifed value
-    - mutation always returns the same specified value
-  - `int`:
-    - each model is initialized with an int randomly drawn from the range defined by `lower` and `upper` bounds
-    - mutation is peformed by adding the results of a random draw from
-      a gaussian distribution to the current value, where the gaussian distribution's mu is 0 and its sigma is specified by the `sigma` entry.
-  - `float`:
-    - each model is initialized with a float randomly drawn from the range defined by `lower` and `upper` bounds
-    - mutation is peformed by adding the results of a random draw from
-      a gaussian distribution to the current value, where the gaussian distribution's mu is 0 and its sigma is specified by the `sigma` entry.
-  - `logical`:
-    - each model is initialized with a random boolean.
-    - mutation flips the logical value
-  - `categorical`:
-    - each model is initialized with an element chosen at random from the list of elements in `values`.
-    - mutation chooses an element from the `values` list at random
-  - `ordered`:
-    - each model is inititalized with an element chosen at random from the list of elements in `values`.
-    - given the index of the current value in the list of `values`, mutation selects the element _n_ number of indices away, where n is the result of a random draw between 1 and `sigma` and then is negated with a 0.5 probability.
-
-The following keys are required depending on value of the `type` key.
-
-If the `type` is `constant`:
-
-- `value`: the constant value
-
-If the `type` is `int`, or `float`:
-
-- `lower`: the lower bound of the range to draw from
-- `upper`: the upper bound of the range to draw from
-- `sigma`: the sigma value used by the mutation operator (see above).
-
-If the `type` is `categorical`:
-
-- `values`: the list of elements to choose from
-- `element_type`: the type of the elements to choose from. One of `int`, `float`, `string`, or `logical`
-
-If the `type` is `ordered`:
-
-- `values`: the list of elements to choose from
-- `element_type`: the type of the elements to choose from. One of `int`, `float`, `string`, or `logical`
-- `sigma`: the sigma value used by the mutation operator (see above).
-
-A sample hyperparameter definition file:
-
-```javascript
-[
-  {
-    name: "activation",
-    type: "categorical",
-    element_type: "string",
-    values: [
-      "softmax",
-      "elu",
-      "softplus",
-      "softsign",
-      "relu",
-      "tanh",
-      "sigmoid",
-      "hard_sigmoid",
-      "linear",
-    ],
-  },
-
-  {
-    name: "optimizer",
-    type: "categorical",
-    element_type: "string",
-    values: ["adam", "rmsprop"],
-  },
-
-  {
-    name: "lr",
-    type: "float",
-    lower: 0.0001,
-    upper: 0.01,
-    sigma: "0.000495",
-  },
-
-  {
-    name: "batch_size",
-    type: "ordered",
-    element_type: "int",
-    values: [16, 32, 64, 128, 256],
-    sigma: 1,
-  },
-];
-```
-
-Note that any other keys are ignored by the workflow but can be used to add additional information about the hyperparameter. For example, the sample files
-contain a `comment` entry that contains additional information about that hyperparameter.
-
-### Where to check for output
-
-This includes error output.
-
-When you run the test script, you will get a message about `TURBINE_OUTPUT` . This will be the main output directory for your run.
-
-- On a local system, stdout/stderr for the workflow will go to your terminal.
-- On a scheduled system, stdout/stderr for the workflow will go to `TURBINE_OUTPUT/output.txt`
-
-The individual objective function (model) runs stdout/stderr go into directories of the form:
-
-`TURBINE_OUTPUT/EXPID/run/RUNID/model.log`
-
-where `EXPID` is the user-provided experiment ID, and `RUNID` are the various model runs generated by async-search, one per parameter set, of the form `R_I_J` where `R` is the restart number, `I` is the iteration number, and `J` is the sample within the iteration.
-
-Each successful run of the workflow will produce a `final_results_2` file. The first line of the file contains the GA's final population, that is, the final hyperparameter sets. The second line contains the final score (e.g. val loss) for each parameter set. The remainder of the file reports the GA's per iteration statistics. The columns are:
-
-- gen: the generation / iteration
-- nevals: the number of evaluations performed in this generation. In generations after the first, this may be less the total population size as some combinations will already have been evaluated.
-- avg: the average score
-- std: the standard deviation
-- min: the minimum score
-- max: the maximum score
-- ts: a timestamp recording when this generation finished. The value is the number of seconds since the epoch in floating point format
