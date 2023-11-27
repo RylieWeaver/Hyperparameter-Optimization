@@ -1,22 +1,42 @@
-# Hyperparameter-Optimization
+# Hyperparameter Optimization at Argonne National Lab
 
-This includes some of my work on hyperparameter optimization done at Argonne National Lab. The projects I worked on (CANDLE/IMPROVE) are fully open source and can be accessed on github here:   . These are not full recording of the work, but meant to be accessible and representative.
+## Overview
 
-As the person in charge of the genetic algorithm HPO, I (1) Collaborated with the person in charge of workflow management to have the DEAP algorithm implemented properly in the workflow. (2) Selected the genetic algorithm parameters based on research of their effectiveness and tailoring to our high-performance computing job-submitting environment. (3) Understand the high-performance computing job submitting environment (3) Create draft files for people to customize, including settings for their genetic algorithm, settings for the high-performance computing environment, and setting the hyperparameter-space they want.
+This repository showcases a subset of my work on hyperparameter optimization conducted at Argonne National Lab, focusing on projects CANDLE and IMPROVE. While this is not an exhaustive record, it offers an accessible and representative glimpse into the initiatives. Both projects are fully open source:
 
+- [CANDLE](https://github.com/ECP-CANDLE)
+- [IMPROVE](https://github.com/JDACS4C-IMPROVE)
+
+## My Role
+
+As the lead for the genetic algorithm-based Hyperparameter Optimization (HPO), my responsibilities included:
+
+- Collaborating with the workflow management lead to integrate the DEAP algorithm seamlessly into our processes.
+- Researching and selecting genetic algorithm parameters, customizing them to suit our high-performance computing (HPC) job-submitting environment.
+- Understanding and adapting to the nuances of HPC job submission.
+- Creating and refining template files to enable customization of genetic algorithm settings, HPC environment configurations, and hyperparameter-space definitions.
+- Documenting the genetic algorithm workflow and its settings comprehensively for model curators' reference.
+- Working closely with model curators to debug, refine, and optimize the genetic algorithm implementation in various models.
 
 ## Investigation
 
-The `Investigation` directory contains some preliminary investigation I conducted on hyperparameter optimization. Specifically, I focused on implementing a genetic algorithm via the DEAP (Distributed Evolutionary Evolutionary Algorithms in Python) library. 
+The `Investigation` directory contains initial exploratory work on hyperparameter optimization using the DEAP library. Key focus areas include:
 
-The `Investigation` includes some proof of concept for the genetic algorithms effectiveness, it's ability do handle different types of hyperparameters not corrupting their data types, and ability to be logged for colorplotting of the hyperparameter-space later on. Furthermore, it involves some investigation into the genetic algorithm parameters to find optimal configurations.
+- Demonstrating the genetic algorithm's efficacy.
+- Ensuring robust handling of various hyperparameter types without data corruption.
+- Enabling detailed logging for subsequent color plotting of the hyperparameter-space.
+- Researching genetic algorithm parameters to identify optimal configurations.
 
-More information on the DEAP library can be found here:
-- https://deap.readthedocs.io/en/master/index.html
-- https://www.researchgate.net/publication/235707001_DEAP_Evolutionary_algorithms_made_easy
-- https://github.com/DEAP/deap
+For more information on DEAP, explore the following resources:
 
+- [DEAP Documentation](https://deap.readthedocs.io/en/master/index.html)
+- [Research Paper on DEAP](https://www.researchgate.net/publication/235707001_DEAP_Evolutionary_algorithms_made_easy)
+- [DEAP GitHub Repository](https://github.com/DEAP/deap)
 
 ## Project Excerpts
 
-The `Project_Excerpts` directory contains some samples of work I performed for the hyperparameter optimization. Specifically, I included a `README.adoc` for project 
+In the `Project_Excerpts` directory, you'll find select pieces of my work, including:
+
+- `README.adoc`: A comprehensive guide for model curators on utilizing the genetic algorithm.
+- Sample configuration files: Templates for genetic algorithm and computing system settings.
+- `deap_ga.py`: The core script outlining the genetic algorithm framework.
