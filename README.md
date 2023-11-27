@@ -41,3 +41,17 @@ In the `Project_Excerpts` directory, you'll find select pieces of my work, inclu
 - Sample configuration files: Templates for genetic algorithm and computing system settings.
 - `deap_ga.py`: The core script outlining the genetic algorithm framework.
 - `cfg-1.sh`, `cfg-my-experiment.sh`, and `hyperparams.json`: File outlines for running the HPO, including genetic algorithm settings, HPC settings, and the definition of the hyperparameter space.
+
+## Results
+
+The `Results` directory showcases the outcomes of the hyperparameter optimization (HPO) process on the 'DeepTTC' model, a complex transformer model for cancer drug-response prediction:
+
+- **Model Performance Enhancement**: Achieved a 5.46% reduction in validation loss compared to the default settings, highlighting the efficacy of the HPO approach.
+- **Comparison with Random Search**: Demonstrated a 2.61% greater reduction in validation loss than an equally sized random search, emphasizing the efficiency of the genetic algorithm-based HPO.
+- **Visualization of Hyperparameter Space**: Includes colorplots that intuitively represent the impact of various hyperparameter combinations on the 'DeepTTC' model's performance.
+- **Comprehensive Analysis**: Accompanying documentation provides in-depth insights into the optimization process, hyperparameter effects, and the rationale behind observed improvements.
+
+These results and visualizations not only illustrate the effectiveness of genetic algorithms in HPO but also offer actionable insights for enhancing transformer models like 'DeepTTC', serving as a valuable guide for future optimization endeavors.
+
+For more details on the 'DeepTTC' model: [DeepTTC GitHub Repository](https://github.com/JDACS4C-IMPROVE/DeepTTC).
+
