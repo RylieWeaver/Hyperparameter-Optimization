@@ -3,70 +3,6 @@
 
 The GA workflow uses the Python deap package (http://deap.readthedocs.io/en/master) to optimize hyperparameters using a genetic algorithm.
 
-## Running
-
-1. cd into the **Supervisor/workflows/GA/test** directory
-2. Specify the GA parameters in the **cfg-prm-1.sh** file (see [below](#structure) for more information on the GA parameters)
-3. Specify the PROCS, QUEUE etc. in **cfg-sys-1.sh** file
-4. You will pass the MODEL_NAME, SITE, and optional experiment id arguments to **test-1.sh** file when launching:
-   `./test-1.sh <model_name> <machine_name> [expid]`
-   where `model_name` can be tc1 etc., `machine_name` can be local, cori, theta, titan etc. (see [NOTE](#making_changes) below on creating new SITE files.)
-5. Update the parameter space json file if necessary. The parameter space is defined in json file (see **workflows/GA/data/tc1_param_space_ga.json** for an example with tc1). The
-   **cfg-prm-1.sh** script will attempt to select the correct json given the model name. Edit that file as appropriate. The parameter space json file is further described [here](#config)
-6. The benchmark will be run for the number of processors specified
-7. Final objective function values, along with parameters, will be available in the experiments directory in a **finals_results** file and also printed to standard out.
-
-## User requirements
-
-What you need to install to run the workflow:
-
-- This workflow - `git@github.com:ECP-CANDLE/Supervisor.git` .
-  Clone and switch to the `master` branch. Then `cd` to `workflows/GA`
-  (the directory containing this README).
-- TC1 or other benchmark - `git@github.com:ECP-CANDLE/Benchmarks.git` .
-  Clone and switch to the `frameworks` branch.
-- benchmark data -
-  See the individual benchmarks README for obtaining the initial data
-
-Python specific installation requirements:
-
-1. pandas
-2. deap
-
-These may be already part of the existing python installation. If not these can be installed using `conda` or `pip`. They
-must be installed using the same python installation used by swift-t. A `swift-t -v` will print the python that swift-t has embedded.
-
-If any required python packages must be installed locally, then you will probably need to add your local site-packages
-directory to the PYTHONPATH specified in **cfg-sys-1.sh**. For example,
-
-`export PYTHONPATH=/global/u1/n/ncollier/.local/cori/deeplearning2.7/lib/python2.7/site-packages`
-
-## Calling sequence
-
-Function calls:
-
-```
-test-1.sh -> swift/workflow.sh ->
-
-      (GA via EQPy)
-      swift/workflow.swift -> common/python/deap_ga.py
-
-      (Benchmark)
-      swift/workflow.swift -> common/swift/obj_app.swift ->
-      common/sh/model.sh -> common/python/model_runner.py -> 'calls Benchmark'
-
-      (Results from Benchmark returned to the GA via EQPy)
-      common/swift/obj_app.swift -> swift/workflow.swift ->
-      common/python/deap_ga.py
-```
-
-Scheduling scripts:
-
-```
-test-1.sh -> cfg-sys-1.sh ->
-      common/sh/<machine_name> - module, scheduling, langs .sh files
-```
-
 ## The supervisor interface
 
 Command line:
@@ -109,12 +45,6 @@ To create your own SITE files in workflows/common/sh/:
 copy existing ones but modify the langs-SITE.sh file to define the EQPy location (see workflows/common/sh/langs-local-as.sh for an example).
 
 ### Structure <a name="structure"></a>###
-
-The point of the script structure is that it is easy to make copy and modify the `test-*.sh` script, and the `cfg-*.sh` scripts. These can be checked back
-into the repo for use by others. The `test-*.sh` script and the `cfg-*.sh` scripts should simply contain environment variables that control how `workflow.sh`
-and `workflow.swift` operate.
-
-`test-1.sh` and `cfg-{sys,prm}-1.sh` should be unmodified for simple testing.
 
 The relevant parameters for the GA algorithm are defined in `cfg-prm-*.sh` scripts (see example in `cfg-prm-1.sh`). These are:
 
